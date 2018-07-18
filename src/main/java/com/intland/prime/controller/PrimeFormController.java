@@ -5,6 +5,8 @@ import com.intland.prime.controller.model.PrimeResultForm;
 import com.intland.prime.service.queue.QueueService;
 import com.intland.prime.service.store.PrimeNumberStore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -20,6 +22,8 @@ import javax.validation.Valid;
 
 @Controller
 public class PrimeFormController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PrimeFormController.class);
 
     @Autowired
     @Qualifier("scheduled")
@@ -48,11 +52,18 @@ public class PrimeFormController {
 
         final Optional<BigInteger> primeNumber = this.primeNumberStore.getPrime(index);
         if (primeNumber.isPresent()) {
+            logger.debug("Prime is found in the store");
             form.setPrimeNumber(primeNumber.get());
             return "result";
         }
 
-        if (this.scheduledPrimeQueueService.contains(index) || this.processingPrimeQueueService.contains(index)) {
+        if (this.processingPrimeQueueService.contains(index)) {
+            logger.debug("Prime is in the processing queue");
+            return "resultFetching";
+        }
+
+        if (this.scheduledPrimeQueueService.contains(index)) {
+            logger.debug("Prime is in the scheduled queue");
             return "resultFetching";
         }
 

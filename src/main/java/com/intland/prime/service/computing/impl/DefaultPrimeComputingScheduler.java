@@ -47,7 +47,7 @@ public class DefaultPrimeComputingScheduler implements PrimeComputingScheduler {
         }
 
         if (this.processingPrimeQueueService.contains(index.get())) {
-            logger.debug("Somebody already workin on finding the {}. prime", index.get());
+            logger.debug("Somebody is working on finding the {}. prime", index.get());
             return;
         }
 

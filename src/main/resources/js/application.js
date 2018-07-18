@@ -6,18 +6,22 @@ $(function() {
 
     var index = $("#fetch-prime").data("index");
 
-    var id = setInterval(function() {
-
+    var fetchPrime = function(index) {
         $.get("/prime/fetch", {
             index : index
         }).done(function(data) {
-            clearInterval(id);
             $("#fetch-prime").text(data.number);
         }).fail(function(error) {
-            if (error.status != 102 /* HttpStatus.PROCESSING */) {
-                clearInterval(id);
+            if (error.status == 302 /* HttpStatus.FOUND */) {
+                
+                setTimeout(function() {
+                    fetchPrime(index);
+                }, 500);
+                
             }
         })
+    }
 
-    }, 1000)
+    fetchPrime(index);
+    
 })

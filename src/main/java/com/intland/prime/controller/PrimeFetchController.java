@@ -34,7 +34,7 @@ public class PrimeFetchController {
     public ResponseEntity<PrimeResult> fetch(@RequestParam(value = "index") final Long index) {
 
         if (this.processingPrimeQueueService.contains(index) || this.scheduledPrimeQueueService.contains(index)) {
-            return ResponseEntity.status(HttpStatus.PROCESSING).build();
+            return ResponseEntity.status(HttpStatus.FOUND).build();
         }
 
         final Optional<BigInteger> prime = this.primeNumberStore.getPrime(index);
