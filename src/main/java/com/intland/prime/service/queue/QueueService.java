@@ -1,7 +1,6 @@
 package com.intland.prime.service.queue;
 
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 import java.util.Optional;
 
@@ -15,10 +14,10 @@ public interface QueueService {
     /**
      * Return a value from the queue
      *
-     * @return Value can be null in case the queue is empty
+     * @return The next index that should be processed
      *
      */
-    @Nullable
+    @NonNull
     Optional<Long> getNextIndex();
 
     /**
