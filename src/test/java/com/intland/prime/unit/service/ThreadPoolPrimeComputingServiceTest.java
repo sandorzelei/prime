@@ -1,7 +1,6 @@
 package com.intland.prime.unit.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,8 +37,8 @@ public class ThreadPoolPrimeComputingServiceTest {
     @MockBean
     private PrimeNumberStore primeNumberStore;
 
-    @MockBean(name = "processing")
-    private QueueService processingPrimeQueueService;
+    @MockBean
+    private QueueService primeQueueService;
 
     @MockBean
     private PrimeCheckService primeCheckService;
@@ -49,10 +48,12 @@ public class ThreadPoolPrimeComputingServiceTest {
 
     private ThreadPoolPrimeComputingService service;
 
+    private PrimeComputingTaskFactory factory;
+
     @Before
     public void init() {
-        final PrimeComputingTaskFactory factory = new PrimeComputingTaskFactory(this.primeCheckService, this.primeNumberStore, this.processingPrimeQueueService);
-        this.service = spy(new ThreadPoolPrimeComputingService(factory, this.primeNumberStore, this.executor));
+        this.factory = new PrimeComputingTaskFactory(this.primeCheckService, this.primeNumberStore, this.primeQueueService);
+        this.service = spy(new ThreadPoolPrimeComputingService(this.executor));
     }
 
     @Test
@@ -60,17 +61,15 @@ public class ThreadPoolPrimeComputingServiceTest {
 
         // GIVEN
         final long index = 1L;
+        final PrimeComputingTask task = this.factory.create(index);
 
         when(this.primeNumberStore.getPrime(ArgumentMatchers.eq(index))).thenReturn(Optional.empty());
 
         // WHEN
-        this.service.startComputingPrime(index);
+        this.service.startComputingPrime(task);
 
         // THEN
-        verify(this.primeNumberStore, times(1)).getPrime(ArgumentMatchers.eq(index));
-        verifyNoMoreInteractions(this.primeNumberStore);
-
-        verify(this.executor, times(1)).submit(ArgumentMatchers.any(PrimeComputingTask.class));
+        verify(this.executor, times(1)).submit(ArgumentMatchers.eq(task));
         verifyNoMoreInteractions(this.executor);
     }
 
@@ -79,19 +78,17 @@ public class ThreadPoolPrimeComputingServiceTest {
 
         // GIVEN
         final long index = 1L;
+        final PrimeComputingTask task = this.factory.create(index);
 
         when(this.primeNumberStore.getPrime(ArgumentMatchers.eq(index))).thenReturn(Optional.of(BigInteger.valueOf(2L)));
 
         // WHEN
-        this.service.startComputingPrime(index);
+        this.service.startComputingPrime(task);
 
         // THEN
-        verify(this.service, times(1)).startComputingPrime(ArgumentMatchers.eq(index));
-        verify(this.executor, never()).submit(ArgumentMatchers.any(PrimeComputingTask.class));
+        verify(this.service, times(1)).startComputingPrime(ArgumentMatchers.eq(task));
+        verify(this.executor, times(1)).submit(ArgumentMatchers.eq(task));
         verifyNoMoreInteractions(this.service);
-
-        verify(this.primeNumberStore, times(1)).getPrime(ArgumentMatchers.eq(index));
-        verifyNoMoreInteractions(this.primeNumberStore);
     }
 
     @Test
@@ -105,7 +102,7 @@ public class ThreadPoolPrimeComputingServiceTest {
         when(this.executor.getMaxPoolSize()).thenReturn(1);
 
         // WHEN
-        this.service.startComputingPrime(index);
+        this.service.startComputingPrime(this.factory.create(index));
         final boolean isAvailable = this.service.isAvailable();
 
         // THEN
@@ -123,7 +120,7 @@ public class ThreadPoolPrimeComputingServiceTest {
         when(this.executor.getMaxPoolSize()).thenReturn(1);
 
         // WHEN
-        this.service.startComputingPrime(index);
+        this.service.startComputingPrime(this.factory.create(index));
         final boolean isAvailable = this.service.isAvailable();
 
         // THEN

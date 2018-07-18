@@ -16,22 +16,22 @@ public class DefaultPrimeComputingScheduler implements PrimeComputingScheduler {
 
     private final PrimeComputingService primeComputingService;
 
-    private final QueueService scheduledPrimeQueueService;
+    private final QueueService primeQueueService;
 
-    private final QueueService processingPrimeQueueService;
+    private final PrimeComputingTaskFactory factory;
 
-    public DefaultPrimeComputingScheduler(final PrimeComputingService primeComputingService, final QueueService scheduledPrimeQueueService, final QueueService processingPrimeQueueService) {
+    public DefaultPrimeComputingScheduler(final PrimeComputingTaskFactory factory, final PrimeComputingService primeComputingService, final QueueService primeQueueService) {
         super();
+        this.factory = factory;
         this.primeComputingService = primeComputingService;
-        this.scheduledPrimeQueueService = scheduledPrimeQueueService;
-        this.processingPrimeQueueService = processingPrimeQueueService;
+        this.primeQueueService = primeQueueService;
     }
 
     @Override
     @Scheduled(fixedDelay = 1000L)
     public void scheduleNext() {
 
-        if (!this.scheduledPrimeQueueService.hasNext()) {
+        if (!this.primeQueueService.hasNextScheduled()) {
             return;
         }
 
@@ -40,18 +40,13 @@ public class DefaultPrimeComputingScheduler implements PrimeComputingScheduler {
             return;
         }
 
-        final Optional<Long> index = this.scheduledPrimeQueueService.pop();
+        final Optional<Long> index = this.primeQueueService.getNextIndex();
         if (!index.isPresent()) {
             logger.debug("There is nothing to compute");
             return;
         }
 
-        if (this.processingPrimeQueueService.contains(index.get())) {
-            logger.debug("Somebody is working on finding the {}. prime", index.get());
-            return;
-        }
-
-        this.primeComputingService.startComputingPrime(index.get());
+        this.primeComputingService.startComputingPrime(this.factory.create(index.get()));
     }
 
 }

@@ -15,6 +15,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.LongStream;
 
 @RunWith(SpringRunner.class)
@@ -37,7 +38,7 @@ public class RedisQueueServiceTest {
         // GIVEN
 
         // WHEN
-        final Boolean hasNext = this.service.hasNext();
+        final Boolean hasNext = this.service.hasNextScheduled();
 
         // THEN
         assertThat(hasNext).isFalse();
@@ -46,10 +47,10 @@ public class RedisQueueServiceTest {
     @Test
     public void testHasNextWhenQueueIsNotEmpty() {
         // GIVEN
-        this.service.put(2L);
+        this.service.schedule(2L);
 
         // WHEN
-        final Boolean hasNext = this.service.hasNext();
+        final Boolean hasNext = this.service.hasNextScheduled();
 
         // THEN
         assertThat(hasNext).isTrue();
@@ -59,25 +60,27 @@ public class RedisQueueServiceTest {
     public void testQueueReturnTheRightValue() {
         // GIVEN
         final long index = 2L;
-        this.service.put(index);
+        this.service.schedule(index);
 
         // WHEN
-        final Long nextIndex = this.service.pop().get();
+        final Long nextIndex = this.service.getNextIndex().get();
 
         // THEN
         assertThat(nextIndex).isEqualTo(index);
+        assertThat(this.service.isScheduled(index)).isFalse();
+        assertThat(this.service.isProcessing(index)).isTrue();
     }
 
     @Test
     public void testQueueRemovesDuplcations() {
         // GIVEN
         final long index = 2L;
-        this.service.put(index);
-        this.service.put(index);
+        this.service.schedule(index);
+        this.service.schedule(index);
 
         // WHEN
-        final Long nextIndex = this.service.pop().get();
-        final Boolean hasNext = this.service.hasNext();
+        final Long nextIndex = this.service.getNextIndex().get();
+        final Boolean hasNext = this.service.hasNextScheduled();
 
         // THEN
         assertThat(nextIndex).isEqualTo(index);
@@ -87,12 +90,12 @@ public class RedisQueueServiceTest {
     @Test
     public void testQueueReturnTheRightValues() {
         // GIVEN
-        LongStream.range(0, 10).forEach(this.service::put);
+        LongStream.range(0, 10).forEach(this.service::schedule);
 
         // WHEN
         final List<Long> indexes = new ArrayList<>();
-        while (this.service.hasNext()) {
-            this.service.pop().ifPresent(indexes::add);
+        while (this.service.hasNextScheduled()) {
+            this.service.getNextIndex().ifPresent(indexes::add);
         }
 
         // THEN
@@ -101,15 +104,15 @@ public class RedisQueueServiceTest {
     }
 
     @Test
-    public void testQueueContainsElement() {
+    public void testScheduledQueueContainsElement() {
         // GIVEN
-        LongStream.range(0, 10).forEach(this.service::put);
+        LongStream.range(0, 10).forEach(this.service::schedule);
 
         // WHEN
-        final Boolean isElement = this.service.contains(5L);
+        final Boolean isScheduled = this.service.isScheduled(5L);
 
         // THEN
-        assertThat(isElement).isTrue();
+        assertThat(isScheduled).isTrue();
     }
 
     @Test
@@ -117,21 +120,22 @@ public class RedisQueueServiceTest {
         // GIVEN
 
         // WHEN
-        final Long nextIndex = this.service.pop().get();
+        final Optional<Long> nextIndex = this.service.getNextIndex();
 
         // THEN
-        assertThat(nextIndex).isNull();
+        assertThat(nextIndex).isNotNull();
+        assertThat(nextIndex.isPresent()).isFalse();
     }
 
     @Test
     public void testQueueIsCleared() {
         // GIVEN
-        LongStream.range(0, 10).forEach(this.service::put);
+        LongStream.range(0, 10).forEach(this.service::schedule);
 
         // WHEN
-        final Boolean hasNextBeforeClear = this.service.hasNext();
+        final Boolean hasNextBeforeClear = this.service.hasNextScheduled();
         this.service.clear();
-        final Boolean hasNextAfterClear = this.service.hasNext();
+        final Boolean hasNextAfterClear = this.service.hasNextScheduled();
 
         // THEN
         assertThat(hasNextBeforeClear).isTrue();

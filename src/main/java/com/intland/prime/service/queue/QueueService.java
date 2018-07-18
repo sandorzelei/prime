@@ -10,7 +10,7 @@ public interface QueueService {
     /**
      * Store a value in the queue
      */
-    void put(@NonNull Long value);
+    void schedule(@NonNull Long value);
 
     /**
      * Return a value from the queue
@@ -19,7 +19,7 @@ public interface QueueService {
      *
      */
     @Nullable
-    Optional<Long> pop();
+    Optional<Long> getNextIndex();
 
     /**
      * Return true if queue is not empty, otherwise false
@@ -28,19 +28,7 @@ public interface QueueService {
      *
      */
     @NonNull
-    Boolean hasNext();
-
-    /**
-     * Return true if value is stored in queue, otherwise false
-     *
-     * @param value
-     *            It cannot be null
-     *
-     * @return return true if value is stored in queue, otherwise false
-     *
-     */
-    @NonNull
-    Boolean contains(@NonNull Long value);
+    Boolean hasNextScheduled();
 
     /**
      * Clear the queue
@@ -49,12 +37,36 @@ public interface QueueService {
     void clear();
 
     /**
-     * Remove value from the queue
+     * Return true if value is stored in processing queue, otherwise false
+     *
+     * @param value
+     *            It cannot be null
+     *
+     * @return return true if value is stored in queue, otherwise false
+     *
+     */
+    @NonNull
+    boolean isProcessing(@NonNull Long index);
+
+    /**
+     * Return true if value is stored in scheduled queue, otherwise false
+     *
+     * @param value
+     *            It cannot be null
+     *
+     * @return return true if value is stored in queue, otherwise false
+     *
+     */
+    @NonNull
+    boolean isScheduled(@NonNull Long index);
+
+    /**
+     * Remove value from the processing queue
      *
      * @param value
      *            It cannot be null
      *
      */
-    void remove(@NonNull Long value);
+    void processed(Long index);
 
 }

@@ -5,7 +5,6 @@ import com.intland.prime.service.queue.QueueService;
 import com.intland.prime.service.store.PrimeNumberStore;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,17 +22,12 @@ public class PrimeFetchController {
     private PrimeNumberStore primeNumberStore;
 
     @Autowired
-    @Qualifier("scheduled")
-    private QueueService scheduledPrimeQueueService;
-
-    @Autowired
-    @Qualifier("processing")
-    private QueueService processingPrimeQueueService;
+    private QueueService primeQueueService;
 
     @RequestMapping(path = "/prime/fetch", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<PrimeResult> fetch(@RequestParam(value = "index") final Long index) {
 
-        if (this.processingPrimeQueueService.contains(index) || this.scheduledPrimeQueueService.contains(index)) {
+        if (this.primeQueueService.isProcessing(index) || this.primeQueueService.isScheduled(index)) {
             return ResponseEntity.status(HttpStatus.FOUND).build();
         }
 

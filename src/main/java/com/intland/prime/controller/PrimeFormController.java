@@ -8,7 +8,6 @@ import com.intland.prime.service.store.PrimeNumberStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,12 +25,7 @@ public class PrimeFormController {
     private static final Logger logger = LoggerFactory.getLogger(PrimeFormController.class);
 
     @Autowired
-    @Qualifier("scheduled")
-    private QueueService scheduledPrimeQueueService;
-
-    @Autowired
-    @Qualifier("processing")
-    private QueueService processingPrimeQueueService;
+    private QueueService primeQueueService;
 
     @Autowired
     private PrimeNumberStore primeNumberStore;
@@ -57,12 +51,12 @@ public class PrimeFormController {
             return "result";
         }
 
-        if (this.processingPrimeQueueService.contains(index)) {
+        if (this.primeQueueService.isProcessing(index)) {
             logger.debug("Prime is in the processing queue");
             return "resultFetching";
         }
 
-        if (this.scheduledPrimeQueueService.contains(index)) {
+        if (this.primeQueueService.isScheduled(index)) {
             logger.debug("Prime is in the scheduled queue");
             return "resultFetching";
         }
@@ -77,7 +71,7 @@ public class PrimeFormController {
             return "form";
         }
 
-        this.scheduledPrimeQueueService.put(personForm.getNumber());
+        this.primeQueueService.schedule(personForm.getNumber());
 
         return String.format("redirect:/prime/%s", personForm.getNumber());
     }

@@ -20,15 +20,13 @@ public class PrimeComputingTask implements Runnable {
 
     private final PrimeNumberStore primeNumberStore;
 
-    private final QueueService processingPrimeQueueService;
+    private final QueueService primeQueueService;
 
-    public PrimeComputingTask(final PrimeCheckService checkService, final PrimeNumberStore primeNumberStore, final QueueService processingPrimeQueueService, final Long index) {
+    public PrimeComputingTask(final PrimeCheckService checkService, final PrimeNumberStore primeNumberStore, final QueueService primeQueueService, final Long index) {
         this.checkService = checkService;
         this.primeNumberStore = primeNumberStore;
-        this.processingPrimeQueueService = processingPrimeQueueService;
+        this.primeQueueService = primeQueueService;
         this.index = index;
-
-        processingPrimeQueueService.put(index);
     }
 
     @Override
@@ -56,7 +54,7 @@ public class PrimeComputingTask implements Runnable {
 
             }
 
-            this.processingPrimeQueueService.remove(this.index);
+            this.primeQueueService.processed(this.index);
             logger.debug("{}. prime is found and stored, prime is {}", this.index, prime);
 
         } catch (final Exception e) {

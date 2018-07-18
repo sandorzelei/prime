@@ -54,20 +54,20 @@ public class BeanConfiguration {
         return template;
     }
 
-    @Bean("scheduled")
-    public QueueService scheduledPrimeQueueService(final RedisTemplate<String, Long> template) {
-        return new RedisQueueService("scheduled", template);
-    }
-
-    @Bean("processing")
-    public QueueService processingPrimeQueueService(final RedisTemplate<String, Long> template) {
-        return new RedisQueueService("processing", template);
+    @Bean
+    public QueueService primeQueueService(final RedisTemplate<String, Long> template) {
+        return new RedisQueueService("prime", template);
     }
 
     @Bean
-    public PrimeComputingScheduler primeComputingSchuler(final PrimeComputingService primeComputingService, @Qualifier("scheduled") final QueueService scheduledPrimeQueueService,
-            @Qualifier("processing") final QueueService processingPrimeQueueService) {
-        return new DefaultPrimeComputingScheduler(primeComputingService, scheduledPrimeQueueService, processingPrimeQueueService);
+    public PrimeComputingTaskFactory primeComputingTaskFactory(final PrimeCheckService primeCheckService, final PrimeNumberStore primeNumberStore, final QueueService processingPrimeQueueService) {
+        return new PrimeComputingTaskFactory(primeCheckService, primeNumberStore, processingPrimeQueueService);
+    }
+
+    @Bean
+    public PrimeComputingScheduler primeComputingSchuler(final PrimeComputingTaskFactory primeComputingTaskFactory, final PrimeComputingService primeComputingService,
+            final QueueService primeQueueService) {
+        return new DefaultPrimeComputingScheduler(primeComputingTaskFactory, primeComputingService, primeQueueService);
     }
 
     @Bean
@@ -81,10 +81,8 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public PrimeComputingService primeComputingService(final PrimeCheckService primeCheckService, final PrimeNumberStore primeNumberStore,
-            @Qualifier("processing") final QueueService processingPrimeQueueService, @Qualifier("singleThreadExecutor") final ThreadPoolTaskExecutor singleThreadExecutor) {
-        final PrimeComputingTaskFactory factory = new PrimeComputingTaskFactory(primeCheckService, primeNumberStore, processingPrimeQueueService);
-        return new ThreadPoolPrimeComputingService(factory, primeNumberStore, singleThreadExecutor);
+    public PrimeComputingService primeComputingService(@Qualifier("singleThreadExecutor") final ThreadPoolTaskExecutor singleThreadExecutor) {
+        return new ThreadPoolPrimeComputingService(singleThreadExecutor);
     }
 
 }
